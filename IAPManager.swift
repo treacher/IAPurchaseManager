@@ -24,7 +24,7 @@ public class IAPManager: NSObject {
         
         SKPaymentQueue.default().add(self)
         
-        NotificationCenter.default.addObserver(self, selector: #selector(IAPManager.savePurchasedItems), name: NSNotification.Name.UIApplicationDidEnterBackground, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(IAPManager.savePurchasedItems), name: UIApplication.didEnterBackgroundNotification, object: nil)
     }
     
     public func canMakePayments() -> Bool {
@@ -60,12 +60,12 @@ public class IAPManager: NSObject {
         
         if remainingIds.count == 0 {
             completion(loadedProducts, nil)
+        } else {
+            let request = SKProductsRequest(productIdentifiers: Set(remainingIds))
+            request.delegate = self
+            loadProductsRequests.append(LoadProductsRequestInfo(request: request, completion: completion))
+            request.start()
         }
-        
-        let request = SKProductsRequest(productIdentifiers: Set(remainingIds))
-        request.delegate = self
-        loadProductsRequests.append(LoadProductsRequestInfo(request: request, completion: completion))
-        request.start()
     }
     
     public func purchaseProduct(productId: String, completion: @escaping PurchaseProductCompletionBlock) {
@@ -195,7 +195,7 @@ extension IAPManager { // Store file managment
         }
     }
     
-    func savePurchasedItems() {
+    @objc func savePurchasedItems() {
         let data = NSKeyedArchiver.archivedData(withRootObject: purchasedProductIds)
         do {
             try data.write(to: purchasedItemsURL(), options: [.atomicWrite, .completeFileProtection])
